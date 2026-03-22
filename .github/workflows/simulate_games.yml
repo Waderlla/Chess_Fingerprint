@@ -1,8 +1,6 @@
 name: Weekly chess simulations
 
 on:
-  schedule:
-    - cron: "0 6 * * 1"   # poniedziałek
   workflow_dispatch:
 
 jobs:
