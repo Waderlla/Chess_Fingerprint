@@ -36,3 +36,6 @@ jobs:
 
       - name: Rebuild style profiles
         run: python analyze_players.py
+
+      - name: Cleanup old simulations
+        run: python cleanup_simulations.py
