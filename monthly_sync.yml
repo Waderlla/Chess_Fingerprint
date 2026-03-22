@@ -1,0 +1,38 @@
+name: Monthly chess data sync
+
+on:
+  schedule:
+    - cron: "0 5 1 * *"   # 1. dzień każdego miesiąca o 05:00 UTC
+  workflow_dispatch:       # pozwala uruchomić ręcznie z GitHub Actions
+
+jobs:
+  sync-and-analyze:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_DB_NAME: ${{ secrets.SUPABASE_DB_NAME }}
+      SUPABASE_DB_USER: ${{ secrets.SUPABASE_DB_USER }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
+      SUPABASE_DB_PORT: ${{ secrets.SUPABASE_DB_PORT }}
+      SOURCE_GAMES_RETENTION_YEARS: ${{ secrets.SOURCE_GAMES_RETENTION_YEARS }}
+      FETCH_LOOKBACK_MONTHS: ${{ secrets.FETCH_LOOKBACK_MONTHS }}
+      DISABLE_RAW_JSON_STORAGE: ${{ secrets.DISABLE_RAW_JSON_STORAGE }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run monthly fetch
+        run: python run_fetch.py
+
+      - name: Rebuild style profiles
+        run: python analyze_players.py
