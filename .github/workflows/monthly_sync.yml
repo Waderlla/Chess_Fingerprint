@@ -2,8 +2,8 @@ name: Monthly chess data sync
 
 on:
   schedule:
-    - cron: "0 5 1 * *"   # 1. dzień każdego miesiąca o 05:00 UTC
-  workflow_dispatch:       # pozwala uruchomić ręcznie z zakładki Actions
+    - cron: "0 5 1 * *"   # 1. dzień miesiąca
+  workflow_dispatch:
 
 jobs:
   sync-and-analyze:
@@ -36,6 +36,3 @@ jobs:
 
       - name: Rebuild style profiles
         run: python analyze_players.py
-
-      - name: Cleanup old simulations
-        run: python cleanup_simulations.py
