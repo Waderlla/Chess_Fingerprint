@@ -1,0 +1,41 @@
+name: Weekly chess simulations
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # poniedziałek
+  workflow_dispatch:
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_DB_NAME: ${{ secrets.SUPABASE_DB_NAME }}
+      SUPABASE_DB_USER: ${{ secrets.SUPABASE_DB_USER }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
+      SUPABASE_DB_PORT: ${{ secrets.SUPABASE_DB_PORT }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Stockfish
+        run: sudo apt-get update && sudo apt-get install -y stockfish
+
+      - name: Set Stockfish path
+        run: echo "STOCKFISH_PATH=/usr/games/stockfish" >> $GITHUB_ENV
+
+      - name: Run simulations
+        run: python batch_generator.py
+
+      - name: Cleanup old simulations
+        run: python cleanup_simulations.py
