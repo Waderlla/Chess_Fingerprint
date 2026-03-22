@@ -3,7 +3,7 @@ name: Monthly chess data sync
 on:
   schedule:
     - cron: "0 5 1 * *"   # 1. dzień każdego miesiąca o 05:00 UTC
-  workflow_dispatch:       # pozwala uruchomić ręcznie z GitHub Actions
+  workflow_dispatch:       # pozwala uruchomić ręcznie z zakładki Actions
 
 jobs:
   sync-and-analyze:
