@@ -116,7 +116,7 @@ def get_sync_window(username):
     latest = get_latest_source_game_date(username)
 
     if latest is None:
-        start_year = now.year - SOURCE_GAMES_RETENTION_YEARS
+        start_year = now.year - 2
         start_month = now.month
         return start_year, start_month, end_year, end_month
 
