@@ -1,0 +1,6 @@
+python-chess
+requests
+psycopg2-binary
+python-dotenv
+scikit-learn
+numpy

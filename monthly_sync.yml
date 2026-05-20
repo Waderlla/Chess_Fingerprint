@@ -1,0 +1,41 @@
+name: Weekly chess data sync
+
+on:
+  schedule:
+    - cron: '0 1 * * 1'  # co poniedziałek o 2:00 w nocy czasu polskiego (1:00 UTC)
+  workflow_dispatch:
+
+jobs:
+  sync-and-classify:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_DB_NAME: ${{ secrets.SUPABASE_DB_NAME }}
+      SUPABASE_DB_USER: ${{ secrets.SUPABASE_DB_USER }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
+      SUPABASE_DB_PORT: ${{ secrets.SUPABASE_DB_PORT }}
+      MAX_GAMES_PER_PLAYER: ${{ secrets.MAX_GAMES_PER_PLAYER }}
+      FETCH_LOOKBACK_MONTHS: ${{ secrets.FETCH_LOOKBACK_MONTHS }}
+      DISABLE_RAW_JSON_STORAGE: ${{ secrets.DISABLE_RAW_JSON_STORAGE }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch new games from Chess.com
+        run: python run_fetch.py
+
+      - name: Compute player statistics for cards and radar chart
+        run: python compute_stats.py
+
+      - name: Train classifier and save move-by-move probabilities
+        run: python classifier.py
