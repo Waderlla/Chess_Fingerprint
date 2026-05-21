@@ -19,9 +19,10 @@ from database import (
     strip_raw_json_from_source_games,
 )
 
+HEADERS = {"User-Agent": "chess-fingerprint/1.0"}
+
 
 def month_range(start_year, start_month, end_year, end_month):
-    # Generator kolejnych miesięcy pomiędzy datą start i end.
     year, month = start_year, start_month
     while (year < end_year) or (year == end_year and month <= end_month):
         yield year, month
@@ -32,7 +33,6 @@ def month_range(start_year, start_month, end_year, end_month):
 
 
 def shift_months(year, month, delta_months):
-    # Przesuwa rok/miesiąc o podaną liczbę miesięcy.
     absolute = year * 12 + (month - 1) + delta_months
     new_year = absolute // 12
     new_month = absolute % 12 + 1
@@ -40,12 +40,10 @@ def shift_months(year, month, delta_months):
 
 
 def utc_now():
-    # Zwraca aktualny czas UTC.
     return datetime.now(timezone.utc)
 
 
 def parse_played_at(game):
-    # Zamienia timestamp z Chess.com na datetime UTC.
     end_time = game.get("end_time")
     if end_time is None:
         return None
@@ -53,7 +51,6 @@ def parse_played_at(game):
 
 
 def extract_record(username, game):
-    # Wyciąga z odpowiedzi API tylko te pola, które są potrzebne w projekcie.
     white = game.get("white", {}) or {}
     black = game.get("black", {}) or {}
 
@@ -93,73 +90,104 @@ def extract_record(username, game):
 
 
 def fetch_month(username, year, month):
-    # Pobiera archiwum partii jednego użytkownika dla danego miesiąca.
     url = f"https://api.chess.com/pub/player/{username}/games/{year}/{month:02d}"
-    headers = {"User-Agent": "chess-style-project/1.0"}
-    response = requests.get(url, headers=headers, timeout=30)
-
+    response = requests.get(url, headers=HEADERS, timeout=30)
     if response.status_code == 404:
         return []
-
     response.raise_for_status()
-    data = response.json()
-    return data.get("games", [])
+    return response.json().get("games", [])
 
 
-def get_sync_window(username):
-    # Wyznacza zakres miesięcy do pobrania:
-    # - przy pierwszym imporcie: ostatnie N lat
-    # - przy kolejnych: od ostatniej zapisanej gry z małym overlapem
+def get_available_archives(username):
+    url = f"https://api.chess.com/pub/player/{username}/games/archives"
+    response = requests.get(url, headers=HEADERS, timeout=30)
+    if response.status_code != 200:
+        return []
+    return response.json().get("archives", [])
+
+
+def initial_fetch(username, conn, cur):
+    # Pobiera od najnowszych partii i zatrzymuje się po osiągnięciu limitu.
+    archives = get_available_archives(username)
+    if not archives:
+        print(f"Brak archiwów dla {username}.")
+        return 0
+
+    archives = list(reversed(archives))  # od najnowszego do najstarszego
+    total_stored = 0
+
+    for archive_url in archives:
+        if total_stored >= MAX_GAMES_PER_PLAYER:
+            break
+
+        parts = archive_url.rstrip("/").split("/")
+        year, month = int(parts[-2]), int(parts[-1])
+
+        print(f"Pobieram {username}: {year}-{month:02d}")
+        games = fetch_month(username, year, month)
+        games = list(reversed(games))  # od najnowszej w miesiącu
+        print(f"  znaleziono gier: {len(games)}")
+
+        for game in games:
+            if total_stored >= MAX_GAMES_PER_PLAYER:
+                break
+            record = extract_record(username, game)
+            insert_source_game_with_cursor(cur, record)
+            total_stored += 1
+
+        conn.commit()
+        print(f"  łącznie zapisano: {total_stored}/{MAX_GAMES_PER_PLAYER}")
+
+    return total_stored
+
+
+def incremental_fetch(username, latest, conn, cur):
+    # Pobiera tylko nowe partie od ostatniego syncu.
     now = utc_now()
+    start_year, start_month = shift_months(latest.year, latest.month, -FETCH_LOOKBACK_MONTHS)
     end_year, end_month = now.year, now.month
 
-    latest = get_latest_source_game_date(username)
+    print(f"\n=== Sync {username}: {start_year}-{start_month:02d} -> {end_year}-{end_month:02d} ===")
+    total_stored = 0
 
-    if latest is None:
-        start_year = now.year - 2
-        start_month = now.month
-        return start_year, start_month, end_year, end_month
+    for year, month in month_range(start_year, start_month, end_year, end_month):
+        print(f"Pobieram {username}: {year}-{month:02d}")
+        games = fetch_month(username, year, month)
+        print(f"  znaleziono gier: {len(games)}")
 
-    start_year, start_month = latest.year, latest.month
-    start_year, start_month = shift_months(start_year, start_month, -FETCH_LOOKBACK_MONTHS)
-    return start_year, start_month, end_year, end_month
+        for index, game in enumerate(games, start=1):
+            record = extract_record(username, game)
+            insert_source_game_with_cursor(cur, record)
+            total_stored += 1
+            if index % 50 == 0:
+                conn.commit()
+
+        conn.commit()
+
+    return total_stored
 
 
 def fetch_and_store(username):
-    # Główny sync partii dla jednego gracza.
-    total_processed = 0
-
-    start_year, start_month, end_year, end_month = get_sync_window(username)
-    print(f"\n=== Sync {username}: {start_year}-{start_month:02d} -> {end_year}-{end_month:02d} ===")
+    latest = get_latest_source_game_date(username)
+    is_initial = latest is None
 
     conn = get_connection()
     cur = conn.cursor()
 
     try:
-        for year, month in month_range(start_year, start_month, end_year, end_month):
-            print(f"Pobieram {username}: {year}-{month:02d}")
-            games = fetch_month(username, year, month)
-            print(f"  znaleziono gier: {len(games)}")
-
-            for index, game in enumerate(games, start=1):
-                record = extract_record(username, game)
-                insert_source_game_with_cursor(cur, record)
-                total_processed += 1
-
-                if index % 50 == 0:
-                    conn.commit()
-                    print(f"  przetworzono {index}/{len(games)}")
-
-            conn.commit()
-
-        print(f"Zakończono {username}. Przetworzono rekordów: {total_processed}")
+        if is_initial:
+            print(f"\n=== Pierwszy import {username} (limit: {MAX_GAMES_PER_PLAYER} partii) ===")
+            total = initial_fetch(username, conn, cur)
+            print(f"Pierwszy import {username} zakończony: {total} partii.")
+        else:
+            total = incremental_fetch(username, latest, conn, cur)
+            print(f"Zakończono {username}. Nowych rekordów: {total}")
     finally:
         cur.close()
         conn.close()
 
 
 def prune_source_games():
-    # Zostawia tylko ostatnie MAX_GAMES_PER_PLAYER partii na gracza.
     for username in PLAYERS:
         deleted = keep_latest_source_games(username, MAX_GAMES_PER_PLAYER)
         print(f"{username}: usunięto {deleted} nadmiarowych partii (limit: {MAX_GAMES_PER_PLAYER})")
@@ -170,8 +198,6 @@ def prune_source_games():
 
 
 def main():
-    # Tworzy tabele, synchronizuje dane dla obu graczy
-    # i na końcu czyści stare rekordy.
     create_tables()
 
     for username in PLAYERS:
