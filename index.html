@@ -147,7 +147,7 @@
       padding-right: 8px;
       font-size: 0.72rem;
       font-weight: 700;
-      color: #003;
+      color: #fff;
       white-space: nowrap;
       min-width: 0;
       overflow: hidden;
@@ -162,7 +162,7 @@
       padding-left: 8px;
       font-size: 0.72rem;
       font-weight: 700;
-      color: #300;
+      color: #fff;
       white-space: nowrap;
       overflow: hidden;
     }
@@ -301,7 +301,7 @@
 
       if (error) {
         document.getElementById('cards').innerHTML =
-          `<div class="loading-msg" style="grid-column:1/-1;color:#f88">Błąd statystyk: ${error.message}</div>`
+          `<div class="loading-msg" style="grid-column:1/-1;color:#c62828">Błąd statystyk: ${error.message}</div>`
         return
       }
       if (!data || data.length < 2) {
