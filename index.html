@@ -276,10 +276,26 @@
     const db = createClient(SUPABASE_URL, SUPABASE_KEY)
 
     // ── Chess state ───────────────────────────────
+    const PIECE_SYMBOLS = {
+      wK:'♔', wQ:'♕', wR:'♖', wB:'♗', wN:'♘', wP:'♙',
+      bK:'♚', bQ:'♛', bR:'♜', bB:'♝', bN:'♞', bP:'♟',
+    }
+
+    function pieceTheme(piece) {
+      const sym   = PIECE_SYMBOLS[piece] || '?'
+      const white = piece[0] === 'w'
+      const fill  = white ? '#ffffff' : '#1a1a1a'
+      const stroke = white ? '#444' : '#aaa'
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'>` +
+        `<text y='44' font-size='46' font-family='serif' fill='${fill}' ` +
+        `stroke='${stroke}' stroke-width='2' paint-order='stroke'>${sym}</text></svg>`
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+    }
+
     const chess = new Chess()
     const board = Chessboard('board', {
       position: 'start',
-      pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/website/img/chesspieces/wikipedia/{piece}.png',
+      pieceTheme,
     })
 
     let moves = []
