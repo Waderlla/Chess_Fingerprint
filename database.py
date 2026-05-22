@@ -68,6 +68,22 @@ def create_tables():
         """
     )
 
+    # Jeśli tabela ma stary schemat (kolumna move_number), usuń ją i odtwórz.
+    cur.execute(
+        """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'game_classifications'
+                AND column_name = 'move_number'
+            ) THEN
+                DROP TABLE game_classifications;
+            END IF;
+        END $$;
+        """
+    )
+
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS game_classifications (
