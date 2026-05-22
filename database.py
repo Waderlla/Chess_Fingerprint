@@ -103,6 +103,12 @@ def create_tables():
         """
     )
 
+    cur.execute(
+        """
+        ALTER TABLE source_games
+        ADD COLUMN IF NOT EXISTS engine_features JSONB;
+        """
+    )
 
     conn.commit()
     cur.close()
@@ -269,6 +275,44 @@ def delete_orphaned_classifications():
     cur.close()
     conn.close()
     return deleted
+
+
+def get_unanalyzed_games() -> list[tuple]:
+    """Zwraca partie bez wyników analizy silnikiem (engine_features IS NULL)."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT game_url, pgn, player_color
+        FROM source_games
+        WHERE pgn IS NOT NULL
+          AND player_color IS NOT NULL
+          AND username IN ('MagnusCarlsen', 'hikaru')
+          AND engine_features IS NULL
+        ORDER BY played_at DESC NULLS LAST;
+        """
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+
+def save_engine_features(game_url: str, features: dict):
+    """Zapisuje wyniki analizy Stockfisha dla jednej partii."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        UPDATE source_games
+        SET engine_features = %s
+        WHERE game_url = %s;
+        """,
+        (Json(features), game_url),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 def save_game_classifications(classifications: list[dict]):
