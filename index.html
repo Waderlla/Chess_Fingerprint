@@ -294,12 +294,21 @@
 
     // ── Player cards ──────────────────────────────
     async function loadStats() {
-      const { data } = await db
+      const { data, error } = await db
         .from('player_stats')
         .select('*')
         .in('username', ['MagnusCarlsen', 'hikaru'])
 
-      if (!data || data.length < 2) return
+      if (error) {
+        document.getElementById('cards').innerHTML =
+          `<div class="loading-msg" style="grid-column:1/-1;color:#f88">Błąd statystyk: ${error.message}</div>`
+        return
+      }
+      if (!data || data.length < 2) {
+        document.getElementById('cards').innerHTML =
+          `<div class="loading-msg" style="grid-column:1/-1">Brak danych statystyk (${data?.length ?? 0} wierszy).</div>`
+        return
+      }
 
       const m = data.find(d => d.username === 'MagnusCarlsen')
       const h = data.find(d => d.username === 'hikaru')
@@ -372,24 +381,44 @@
       stopPlay()
       document.getElementById('game-info').textContent = 'Ładowanie…'
 
-      // Losowy offset spośród partii (zakładamy max ~1000)
-      const offset = Math.floor(Math.random() * 950)
+      // Pobierz łączną liczbę partii
+      const { count } = await db
+        .from('game_classifications')
+        .select('*', { count: 'exact', head: true })
 
-      const { data: gcRows } = await db
+      const total = count || 100
+      const offset = Math.floor(Math.random() * total)
+
+      const { data: gcRows, error: gcErr } = await db
         .from('game_classifications')
         .select('game_url, username, move_probs')
         .range(offset, offset)
 
-      const gc = gcRows?.[0]
-      if (!gc) { document.getElementById('game-info').textContent = 'Błąd: brak partii.'; return }
+      if (gcErr || !gcRows?.length) {
+        document.getElementById('game-info').textContent =
+          'Błąd pobierania partii: ' + (gcErr?.message || 'brak danych')
+        return
+      }
 
-      const { data: sg } = await db
+      const gc = gcRows[0]
+
+      const { data: sgRows, error: sgErr } = await db
         .from('source_games')
         .select('pgn, white_username, black_username, played_at, time_class, player_result')
         .eq('game_url', gc.game_url)
-        .single()
+        .limit(1)
 
-      if (!sg?.pgn) { document.getElementById('game-info').textContent = 'Brak PGN.'; return }
+      if (sgErr || !sgRows?.length) {
+        document.getElementById('game-info').textContent =
+          'Błąd source_games: ' + (sgErr?.message || 'brak wiersza dla ' + gc.game_url)
+        return
+      }
+
+      const sg = sgRows[0]
+      if (!sg.pgn) {
+        document.getElementById('game-info').textContent = 'PGN jest NULL w bazie dla tej partii.'
+        return
+      }
 
       setupGame(gc, sg)
     }
