@@ -22,10 +22,47 @@ FEATURE_NAMES = [
     "time_bullet",
     "time_blitz",
     "time_rapid",
+    "is_white",
+    "eco_A",
+    "eco_B",
+    "eco_C",
+    "eco_D",
+    "eco_E",
+    # cechy silnikowe (Stockfish)
+    "acpl_norm",
+    "best_move_rate",
+    "inaccuracy_rate",
+    "mistake_rate",
+    "blunder_rate",
+    "sacrifice_rate",
 ]
 
 
-def _feature_vector(fullmoves, captures, checks, castled, castle_ks, castle_qs, time_class):
+def _eco_features(eco: str) -> list[int]:
+    letter = (eco or "")[:1].upper()
+    return [
+        1 if letter == "A" else 0,
+        1 if letter == "B" else 0,
+        1 if letter == "C" else 0,
+        1 if letter == "D" else 0,
+        1 if letter == "E" else 0,
+    ]
+
+
+def _engine_features(ef: dict | None) -> list[float]:
+    if not ef:
+        return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    return [
+        min(ef.get("acpl", 0) / 100.0, 5.0),
+        ef.get("best_move_rate", 0.0),
+        ef.get("inaccuracy_rate", 0.0),
+        ef.get("mistake_rate", 0.0),
+        ef.get("blunder_rate", 0.0),
+        ef.get("sacrifice_rate", 0.0),
+    ]
+
+
+def _feature_vector(fullmoves, captures, checks, castled, castle_ks, castle_qs, time_class, player_color, eco, engine_features=None):
     n = max(fullmoves, 1)
     return [
         min(fullmoves / 60.0, 2.0),
@@ -37,10 +74,13 @@ def _feature_vector(fullmoves, captures, checks, castled, castle_ks, castle_qs, 
         1 if time_class == "bullet" else 0,
         1 if time_class == "blitz" else 0,
         1 if time_class == "rapid" else 0,
+        1 if player_color == "white" else 0,
+        *_eco_features(eco),
+        *_engine_features(engine_features),
     ]
 
 
-def game_to_features(parsed: dict, time_class: str) -> list[float]:
+def game_to_features(parsed: dict, time_class: str, player_color: str, engine_features: dict | None = None) -> list[float]:
     castle_type = parsed.get("player_castle_type")
     return _feature_vector(
         fullmoves=parsed.get("fullmoves", 0) or 0,
@@ -50,10 +90,13 @@ def game_to_features(parsed: dict, time_class: str) -> list[float]:
         castle_ks=1 if castle_type == "kingside" else 0,
         castle_qs=1 if castle_type == "queenside" else 0,
         time_class=time_class,
+        player_color=player_color,
+        eco=parsed.get("eco", "") or "",
+        engine_features=engine_features,
     )
 
 
-def collect_move_vectors(pgn: str, player_color: str, time_class: str) -> list[tuple[int, list[float]]]:
+def collect_move_vectors(pgn: str, player_color: str, time_class: str, eco: str = "", engine_features: dict | None = None) -> list[tuple[int, list[float]]]:
     """
     Przetwarza partię i zwraca listę (move_number, feature_vector) dla każdego ruchu.
     Wektory są potem przekazywane do predict_proba w jednej zbiorczej operacji.
@@ -89,7 +132,7 @@ def collect_move_vectors(pgn: str, player_color: str, time_class: str) -> list[t
                 castle_qs = 1 if is_qs else 0
 
         move_number = (halfmove + 1) // 2
-        vec = _feature_vector(move_number, captures, checks, castled, castle_ks, castle_qs, time_class)
+        vec = _feature_vector(move_number, captures, checks, castled, castle_ks, castle_qs, time_class, player_color, eco, engine_features)
         results.append((move_number, vec))
 
     return results
@@ -100,11 +143,12 @@ def load_games() -> list[tuple]:
     cur = conn.cursor()
     cur.execute(
         """
-        SELECT username, player_color, time_class, pgn, game_url
+        SELECT username, player_color, time_class, pgn, game_url, engine_features
         FROM source_games
         WHERE pgn IS NOT NULL
           AND username IN ('MagnusCarlsen', 'hikaru')
-          AND player_color IS NOT NULL;
+          AND player_color IS NOT NULL
+          AND engine_features IS NOT NULL;
         """
     )
     rows = cur.fetchall()
@@ -122,15 +166,16 @@ def main():
 
     dataset = []
     skipped = 0
-    for username, player_color, time_class, pgn, game_url in rows:
+    for username, player_color, time_class, pgn, game_url, engine_features in rows:
         if username not in PLAYERS:
             continue
         parsed = parse_game_features(pgn, player_color)
         if parsed is None:
             skipped += 1
             continue
-        features = game_to_features(parsed, time_class or "")
-        dataset.append((features, PLAYERS[username], username, player_color, time_class or "", pgn, game_url))
+        eco = parsed.get("eco", "") or ""
+        features = game_to_features(parsed, time_class or "", player_color or "", engine_features)
+        dataset.append((features, PLAYERS[username], username, player_color, time_class or "", pgn, game_url, eco, engine_features))
 
     if skipped:
         print(f"Pominięto {skipped} partii z błędnym PGN.")
@@ -160,10 +205,10 @@ def main():
     offsets = []
     all_vecs = []
 
-    for _, _, username, player_color, time_class, pgn, game_url in dataset:
+    for _, _, username, player_color, time_class, pgn, game_url, eco, engine_features in dataset:
         if game_url is None:
             continue
-        move_vecs = collect_move_vectors(pgn, player_color, time_class)
+        move_vecs = collect_move_vectors(pgn, player_color, time_class, eco, engine_features)
         if not move_vecs:
             continue
         start = len(all_vecs)
