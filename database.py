@@ -72,13 +72,10 @@ def create_tables():
         """
         CREATE TABLE IF NOT EXISTS game_classifications (
             id BIGSERIAL PRIMARY KEY,
-            game_url TEXT NOT NULL,
+            game_url TEXT UNIQUE NOT NULL,
             username TEXT NOT NULL,
-            move_number INT NOT NULL,
-            magnus_prob FLOAT NOT NULL,
-            hikaru_prob FLOAT NOT NULL,
-            created_at TIMESTAMP DEFAULT NOW(),
-            UNIQUE (game_url, move_number)
+            move_probs JSONB NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
         );
         """
     )
@@ -90,12 +87,6 @@ def create_tables():
         """
     )
 
-    cur.execute(
-        """
-        CREATE INDEX IF NOT EXISTS idx_game_classifications_game_url
-        ON game_classifications (game_url);
-        """
-    )
 
     conn.commit()
     cur.close()
@@ -265,24 +256,24 @@ def delete_orphaned_classifications():
 
 
 def save_game_classifications(classifications: list[dict]):
+    """Zapisuje klasyfikacje jako jeden wiersz na partię (move_probs jako JSON)."""
     if not classifications:
         return
 
     conn = get_connection()
     cur = conn.cursor()
 
-    chunk_size = 500
+    chunk_size = 200
     for i in range(0, len(classifications), chunk_size):
         chunk = classifications[i : i + chunk_size]
         cur.executemany(
             """
-            INSERT INTO game_classifications (game_url, username, move_number, magnus_prob, hikaru_prob)
-            VALUES (%(game_url)s, %(username)s, %(move_number)s, %(magnus_prob)s, %(hikaru_prob)s)
-            ON CONFLICT (game_url, move_number) DO UPDATE SET
-                magnus_prob = EXCLUDED.magnus_prob,
-                hikaru_prob = EXCLUDED.hikaru_prob;
+            INSERT INTO game_classifications (game_url, username, move_probs)
+            VALUES (%(game_url)s, %(username)s, %(move_probs)s)
+            ON CONFLICT (game_url) DO UPDATE SET
+                move_probs = EXCLUDED.move_probs;
             """,
-            chunk,
+            [({"game_url": r["game_url"], "username": r["username"], "move_probs": Json(r["move_probs"])}) for r in chunk],
         )
         conn.commit()
 
