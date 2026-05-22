@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Style: Magnus vs Hikaru</title>
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <style>
+    :root {
+      --magnus: #3a78a0;
+      --hikaru: #b86420;
+      --bg: #f5efe6;
+      --card: #ffffff;
+      --border: #ddd5c5;
+      --text: #2d2416;
+      --muted: #8a7a68;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      padding: 20px 16px 40px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    /* ── CARDS ── */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px;
+      border-top: 3px solid var(--magnus);
+      box-shadow: 0 2px 12px rgba(80,50,10,.08);
+    }
+
+    .card.hikaru { border-top-color: var(--hikaru); }
+
+    .card-name {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--magnus);
+    }
+
+    .card.hikaru .card-name { color: var(--hikaru); }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 0.8rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .stat-row:last-child { border-bottom: none; }
+    .stat-val { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* ── RADAR ── */
+    .radar-wrap {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 260px;
+      box-shadow: 0 2px 12px rgba(80,50,10,.08);
+    }
+
+    /* ── REPLAYER ── */
+    .replayer {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 2px 12px rgba(80,50,10,.08);
+    }
+
+    .replayer-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    #board { width: 300px; }
+
+    .right-panel { display: flex; flex-direction: column; gap: 14px; }
+
+    .game-info {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      min-height: 40px;
+    }
+
+    /* probability bar */
+    .prob-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .prob-labels .ml { color: var(--magnus); }
+    .prob-labels .hl { color: var(--hikaru); }
+
+    .prob-bar {
+      height: 30px;
+      border-radius: 15px;
+      overflow: hidden;
+      background: var(--border);
+      display: flex;
+    }
+
+    .magnus-fill {
+      background: linear-gradient(90deg, #1e5f8a, #4fa0c8);
+      transition: width 0.5s cubic-bezier(.4,0,.2,1);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .hikaru-fill {
+      background: linear-gradient(90deg, #c87830, #a05018);
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding-left: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /* controls */
+    .controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: #ede6da;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 13px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.15s, color 0.15s;
+      line-height: 1;
+    }
+
+    .btn:hover { background: #ddd5c5; }
+    .btn.active { background: var(--magnus); color: #fff; font-weight: 700; border-color: var(--magnus); }
+    .btn.new { background: #eef5ee; border: 1px solid #aecbae; color: #3a6e3a; }
+    .btn.new:hover { background: #cce3cc; }
+
+    .sep { color: var(--border); user-select: none; }
+
+    .move-counter {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .loading-msg {
+      text-align: center;
+      color: var(--muted);
+      padding: 30px;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 620px) {
+      .replayer-grid { grid-template-columns: 1fr; }
+      #board { width: 100%; max-width: 300px; margin: 0 auto; }
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>♟ Chess Style Classifier</h1>
+  <p class="subtitle">Random Forest wytrenowany na partiach z Chess.com · analiza Stockfishem</p>
+
+  <div class="cards" id="cards">
+    <div class="loading-msg" style="grid-column:1/-1">Ładowanie statystyk…</div>
+  </div>
+
+  <div class="radar-wrap">
+    <canvas id="radarChart"></canvas>
+  </div>
+
+  <div class="replayer">
+    <div class="replayer-grid">
+      <div id="board"></div>
+
+      <div class="right-panel">
+        <div class="game-info" id="game-info">Ładowanie partii…</div>
+
+        <div>
+          <div class="prob-labels">
+            <span class="ml" id="magnus-label">Magnus 50%</span>
+            <span class="hl" id="hikaru-label">Hikaru 50%</span>
+          </div>
+          <div class="prob-bar">
+            <div class="magnus-fill" id="magnus-fill" style="width:50%"></div>
+            <div class="hikaru-fill" id="hikaru-fill"></div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="btn" id="btn-prev">◀</button>
+          <button class="btn" id="btn-play">▶ Play</button>
+          <button class="btn" id="btn-next">▶|</button>
+          <span class="sep">|</span>
+          <button class="btn active" id="btn-1x">1×</button>
+          <button class="btn" id="btn-2x">2×</button>
+          <button class="btn" id="btn-4x">4×</button>
+        </div>
+
+        <div class="move-counter" id="move-counter">Ruch 0 / 0</div>
+
+        <button class="btn new" id="btn-new">🎲 Losowa partia</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    const SUPABASE_URL = 'https://zxhfxqkqinegzsoxeyaj.supabase.co'
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4aGZ4cWtxaW5lZ3pzb3hleWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMTgyOTAsImV4cCI6MjA4OTY5NDI5MH0.1vZzW45PL5ZQSkEBRnLM1HDqJZZ-nwiMUxsMiPsGlhw'
+
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // ── Chess state ───────────────────────────────
+    const chess = new Chess()
+    const board = Chessboard('board', {
+      position: 'start',
+      pieceTheme: 'https://cdn.jsdelivr.net/gh/oakmac/chessboardjs@master/website/img/chesspieces/wikipedia/{piece}.png',
+    })
+
+    let moves = []
+    let moveProbs = []
+    let currentMove = 0
+    let playInterval = null
+    let speed = 1200
+
+    // ── Helpers ───────────────────────────────────
+    const pct  = v  => v != null ? (v * 100).toFixed(1) + '%' : '—'
+    const num  = (v, d=1) => v != null ? Number(v).toFixed(d) : '—'
+
+    // ── Player cards ──────────────────────────────
+    async function loadStats() {
+      const { data, error } = await db
+        .from('player_stats')
+        .select('*')
+        .in('username', ['MagnusCarlsen', 'hikaru'])
+
+      if (error) {
+        document.getElementById('cards').innerHTML =
+          `<div class="loading-msg" style="grid-column:1/-1;color:#c62828">Błąd statystyk: ${error.message}</div>`
+        return
+      }
+      if (!data || data.length < 2) {
+        document.getElementById('cards').innerHTML =
+          `<div class="loading-msg" style="grid-column:1/-1">Brak danych statystyk (${data?.length ?? 0} wierszy).</div>`
+        return
+      }
+
+      const m = data.find(d => d.username === 'MagnusCarlsen')
+      const h = data.find(d => d.username === 'hikaru')
+
+      document.getElementById('cards').innerHTML = cardHTML(m, 'magnus') + cardHTML(h, 'hikaru')
+      renderRadar(m, h)
+    }
+
+    function cardHTML(p, cls) {
+      const color = cls === 'magnus' ? 'var(--magnus)' : 'var(--hikaru)'
+      const icon  = cls === 'magnus' ? '♙' : '♟'
+      const name  = cls === 'magnus' ? 'Magnus Carlsen' : 'Hikaru Nakamura'
+      return `
+        <div class="card ${cls}">
+          <div class="card-name">${icon} ${name}</div>
+          <div class="stat-row"><span>Partie w bazie</span><span class="stat-val">${p.games_count ?? '—'}</span></div>
+          <div class="stat-row"><span>Wygrane</span><span class="stat-val">${pct(p.win_rate)}</span></div>
+          <div class="stat-row"><span>Remisy</span><span class="stat-val">${pct(p.draw_rate)}</span></div>
+          <div class="stat-row"><span>Śr. długość</span><span class="stat-val">${num(p.avg_fullmoves)} ruchów</span></div>
+          <div class="stat-row"><span>Bicia / ruch</span><span class="stat-val">${num(p.avg_captures_per_move, 3)}</span></div>
+          <div class="stat-row"><span>Roszada (ks / qs)</span><span class="stat-val">${pct(p.kingside_castle_rate)} / ${pct(p.queenside_castle_rate)}</span></div>
+          <div class="stat-row"><span>Bullet / Blitz / Rapid</span><span class="stat-val">${pct(p.bullet_share)} / ${pct(p.blitz_share)} / ${pct(p.rapid_share)}</span></div>
+        </div>`
+    }
+
+    // ── Radar chart ───────────────────────────────
+    function renderRadar(m, h) {
+      const labels = ['Bicia/ruch', 'Wygrane', 'Remisy', 'Roszada KS', 'Szachy/ruch', 'Blitz']
+
+      function scaleArr(vals, mins, maxs) {
+        return vals.map((v, i) => {
+          if (v == null) return 0
+          return Math.min(1, Math.max(0, (v - mins[i]) / (maxs[i] - mins[i])))
+        })
+      }
+
+      const mins = [0,    0.3, 0,    0, 0,     0]
+      const maxs = [0.15, 0.8, 0.35, 1, 0.08,  1]
+
+      const mVals = scaleArr([m.avg_captures_per_move, m.win_rate, m.draw_rate, m.kingside_castle_rate, m.avg_checks_per_move, m.blitz_share], mins, maxs)
+      const hVals = scaleArr([h.avg_captures_per_move, h.win_rate, h.draw_rate, h.kingside_castle_rate, h.avg_checks_per_move, h.blitz_share], mins, maxs)
+
+      new Chart(document.getElementById('radarChart'), {
+        type: 'radar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Magnus', data: mVals, borderColor: '#3a78a0', backgroundColor: 'rgba(58,120,160,.15)', pointBackgroundColor: '#3a78a0', borderWidth: 2 },
+            { label: 'Hikaru', data: hVals, borderColor: '#b86420', backgroundColor: 'rgba(184,100,32,.15)', pointBackgroundColor: '#b86420', borderWidth: 2 },
+          ],
+        },
+        options: {
+          animation: false,
+          scales: {
+            r: {
+              min: 0, max: 1,
+              ticks: { display: false, stepSize: 0.25 },
+              grid: { color: 'rgba(0,0,0,.07)' },
+              angleLines: { color: 'rgba(0,0,0,.07)' },
+              pointLabels: { color: '#8a7a68', font: { size: 11 } },
+            },
+          },
+          plugins: { legend: { labels: { color: '#2d2416', boxWidth: 14, font: { size: 12 } } } },
+        },
+      })
+    }
+
+    // ── Game loader ───────────────────────────────
+    async function loadRandomGame() {
+      stopPlay()
+      document.getElementById('game-info').textContent = 'Ładowanie…'
+
+      const { count } = await db
+        .from('game_classifications')
+        .select('*', { count: 'exact', head: true })
+
+      const total = count || 100
+      const offset = Math.floor(Math.random() * total)
+
+      const { data: gcRows, error: gcErr } = await db
+        .from('game_classifications')
+        .select('game_url, username, move_probs')
+        .range(offset, offset)
+
+      if (gcErr || !gcRows?.length) {
+        document.getElementById('game-info').textContent =
+          'Błąd pobierania partii: ' + (gcErr?.message || 'brak danych')
+        return
+      }
+
+      const gc = gcRows[0]
+
+      const { data: sgRows, error: sgErr } = await db
+        .from('source_games')
+        .select('pgn, white_username, black_username, played_at, time_class, player_result')
+        .eq('game_url', gc.game_url)
+        .limit(1)
+
+      if (sgErr || !sgRows?.length) {
+        document.getElementById('game-info').textContent =
+          'Błąd source_games: ' + (sgErr?.message || 'brak wiersza dla ' + gc.game_url)
+        return
+      }
+
+      const sg = sgRows[0]
+      if (!sg.pgn) {
+        document.getElementById('game-info').textContent = 'PGN jest NULL w bazie dla tej partii.'
+        return
+      }
+
+      setupGame(gc, sg)
+    }
+
+    function setupGame(gc, sg) {
+      chess.reset()
+      const ok = chess.load_pgn(sg.pgn)
+      if (!ok) { document.getElementById('game-info').textContent = 'Błąd parsowania PGN.'; return }
+
+      moves = chess.history()
+      moveProbs = gc.move_probs || []
+
+      chess.reset()
+      board.position('start', false)
+      currentMove = 0
+
+      updateProbBar(0)
+      updateCounter()
+
+      const white  = sg.white_username || '?'
+      const black  = sg.black_username || '?'
+      const date   = sg.played_at ? sg.played_at.substring(0, 10) : ''
+      const tc     = sg.time_class || ''
+      const result = sg.player_result || ''
+      const label  = gc.username === 'MagnusCarlsen' ? 'Magnus Carlsen' : 'Hikaru Nakamura'
+      const color  = gc.username === 'MagnusCarlsen' ? 'var(--magnus)' : 'var(--hikaru)'
+
+      document.getElementById('game-info').innerHTML =
+        `<strong>${white}</strong> vs <strong>${black}</strong><br>` +
+        `${date}${tc ? ' · ' + tc : ''}${result ? ' · wynik: ' + result : ''}<br>` +
+        `Gracz: <strong style="color:${color}">${label}</strong>`
+    }
+
+    // ── Probability bar ───────────────────────────
+    function updateProbBar(halfmoveIdx) {
+      let mp = 0.5
+
+      if (halfmoveIdx > 0 && moveProbs.length > 0) {
+        const entry = moveProbs[halfmoveIdx - 1]
+        if (entry) mp = entry.magnus_prob ?? 0.5
+      }
+
+      const mPct = Math.round(mp * 100)
+      const hPct = 100 - mPct
+
+      const mFill = document.getElementById('magnus-fill')
+      const hFill = document.getElementById('hikaru-fill')
+
+      mFill.style.width = mPct + '%'
+      mFill.textContent = mPct > 20 ? mPct + '%' : ''
+      hFill.textContent = hPct > 20 ? hPct + '%' : ''
+
+      document.getElementById('magnus-label').textContent = `Magnus ${mPct}%`
+      document.getElementById('hikaru-label').textContent = `Hikaru ${hPct}%`
+    }
+
+    function updateCounter() {
+      const total = Math.ceil(moves.length / 2)
+      const cur   = Math.ceil(currentMove / 2)
+      document.getElementById('move-counter').textContent = `Ruch ${cur} / ${total}`
+    }
+
+    // ── Navigation ────────────────────────────────
+    function goTo(idx) {
+      if (idx < 0 || idx > moves.length) return
+
+      chess.reset()
+      for (let i = 0; i < idx; i++) chess.move(moves[i])
+      board.position(chess.fen(), false)
+
+      currentMove = idx
+      updateProbBar(idx)
+      updateCounter()
+
+      if (idx >= moves.length) stopPlay()
+    }
+
+    function stepForward() { goTo(currentMove + 1) }
+    function stepBack()    { goTo(currentMove - 1) }
+
+    // ── Autoplay ──────────────────────────────────
+    function startPlay() {
+      if (currentMove >= moves.length) goTo(0)
+      playInterval = setInterval(stepForward, speed)
+      document.getElementById('btn-play').textContent = '⏸ Pauza'
+      document.getElementById('btn-play').classList.add('active')
+    }
+
+    function stopPlay() {
+      clearInterval(playInterval)
+      playInterval = null
+      document.getElementById('btn-play').textContent = '▶ Play'
+      document.getElementById('btn-play').classList.remove('active')
+    }
+
+    function togglePlay() {
+      if (playInterval) stopPlay(); else startPlay()
+    }
+
+    function setSpeed(ms, btnId) {
+      speed = ms
+      ['btn-1x','btn-2x','btn-4x'].forEach(id => document.getElementById(id).classList.remove('active'))
+      document.getElementById(btnId).classList.add('active')
+      if (playInterval) { stopPlay(); startPlay() }
+    }
+
+    // ── Events ────────────────────────────────────
+    document.getElementById('btn-prev').addEventListener('click', () => { stopPlay(); stepBack() })
+    document.getElementById('btn-next').addEventListener('click', () => { stopPlay(); stepForward() })
+    document.getElementById('btn-play').addEventListener('click', togglePlay)
+    document.getElementById('btn-new').addEventListener('click', loadRandomGame)
+    document.getElementById('btn-1x').addEventListener('click', () => setSpeed(1200, 'btn-1x'))
+    document.getElementById('btn-2x').addEventListener('click', () => setSpeed(600, 'btn-2x'))
+    document.getElementById('btn-4x').addEventListener('click', () => setSpeed(250, 'btn-4x'))
+
+    // ── Init ──────────────────────────────────────
+    loadStats()
+    loadRandomGame()
+  </script>
+</body>
+</html>
