@@ -27,3 +27,9 @@ MAX_GAMES_PER_PLAYER = int(os.getenv("MAX_GAMES_PER_PLAYER", "500"))
 
 FETCH_LOOKBACK_MONTHS = int(os.getenv("FETCH_LOOKBACK_MONTHS", "1"))
 DISABLE_RAW_JSON_STORAGE = os.getenv("DISABLE_RAW_JSON_STORAGE", "true").lower() == "true"
+
+# ===== SILNIK SZACHOWY =====
+
+# Czas analizy Stockfisha na pozycję (w milisekundach).
+# 20ms ≈ głębokość 12–14, wystarczająco dokładna do ACPL.
+ENGINE_TIME_MS = int(os.getenv("ENGINE_TIME_MS", "20"))
