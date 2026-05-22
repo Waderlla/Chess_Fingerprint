@@ -24,6 +24,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Stockfish
+        run: sudo apt-get install -y stockfish
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -37,6 +40,9 @@ jobs:
 
       - name: Compute player statistics for cards and radar chart
         run: python compute_stats.py
+
+      - name: Analyze games with Stockfish engine
+        run: python engine_analyzer.py
 
       - name: Train classifier and save move-by-move probabilities
         run: python classifier.py
