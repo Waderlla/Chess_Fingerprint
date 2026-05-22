@@ -153,39 +153,51 @@ def main():
     print(f"\nDokładność: {accuracy_score(y_test, y_pred):.1%}")
     print(classification_report(y_test, y_pred, target_names=PLAYER_NAMES))
 
-    # Zbieramy WSZYSTKIE wektory dla wszystkich partii naraz,
-    # potem wywołujemy predict_proba jeden raz — znacznie szybciej.
-    print("Zbieram wektory ruchów...")
-    all_meta = []   # (game_url, username, move_number)
-    all_vecs = []   # feature vector
+    # Zbieramy wszystkie wektory naraz i klasyfikujemy jednym wywołaniem.
+    # Potem zapisujemy jeden wiersz na partię (nie na ruch) — 1000 wierszy zamiast 70 000.
+    print("Zbieram wektory ruchów...", flush=True)
+    per_game_meta = []
+    offsets = []
+    all_vecs = []
 
     for _, _, username, player_color, time_class, pgn, game_url in dataset:
         if game_url is None:
             continue
         move_vecs = collect_move_vectors(pgn, player_color, time_class)
-        for move_number, vec in move_vecs:
-            all_meta.append((game_url, username, move_number))
-            all_vecs.append(vec)
+        if not move_vecs:
+            continue
+        start = len(all_vecs)
+        move_numbers = [m for m, _ in move_vecs]
+        all_vecs.extend(v for _, v in move_vecs)
+        offsets.append((start, len(move_vecs)))
+        per_game_meta.append((game_url, username, move_numbers))
 
-    print(f"Łącznie wektorów: {len(all_vecs)}. Klasyfikuję...")
+    print(f"Łącznie wektorów: {len(all_vecs)}. Klasyfikuję jednym wywołaniem...", flush=True)
     all_probs = clf.predict_proba(np.array(all_vecs))
 
     magnus_idx = PLAYERS["MagnusCarlsen"]
     hikaru_idx = PLAYERS["hikaru"]
 
     classifications = []
-    for (game_url, username, move_number), probs in zip(all_meta, all_probs):
+    for (game_url, username, move_numbers), (start, length) in zip(per_game_meta, offsets):
+        probs_slice = all_probs[start : start + length]
+        move_probs = [
+            {
+                "move_number": mn,
+                "magnus_prob": round(float(p[magnus_idx]), 4),
+                "hikaru_prob": round(float(p[hikaru_idx]), 4),
+            }
+            for mn, p in zip(move_numbers, probs_slice)
+        ]
         classifications.append({
             "game_url": game_url,
             "username": username,
-            "move_number": move_number,
-            "magnus_prob": round(float(probs[magnus_idx]), 4),
-            "hikaru_prob": round(float(probs[hikaru_idx]), 4),
+            "move_probs": move_probs,
         })
 
-    print(f"Zapisuję {len(classifications)} rekordów do bazy...")
+    print(f"Zapisuję {len(classifications)} partii (jeden wiersz na partię)...", flush=True)
     save_game_classifications(classifications)
-    print("Gotowe.")
+    print("Gotowe.", flush=True)
 
 
 if __name__ == "__main__":
