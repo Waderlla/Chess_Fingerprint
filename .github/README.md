@@ -60,12 +60,7 @@ The first version without engine features achieved ~52% (essentially random). Ad
     └── monthly_sync.yml  # weekly cron: fetch → analyze → classify
 ```
 
-## Security
 
-- The Supabase `anon` key in the frontend is public by design — it is read-only
-- Row Level Security (RLS) is enabled on all tables with SELECT-only policies for anonymous users
-- Database credentials (host, password) are stored exclusively in GitHub Secrets
-- The `service_role` key is never used in frontend code
 
 ---
 
@@ -116,9 +111,3 @@ Klasyfikator Random Forest wytrenowany na prawdziwych partiach z Chess.com, wzbo
 
 Pierwsza wersja bez analizy silnikiem osiągała ~52% (praktycznie losowo). Dodanie Stockfisha było kluczową decyzją projektową.
 
-## Bezpieczeństwo
-
-- Klucz `anon` Supabase w kodzie frontendowym jest publiczny z założenia — jest tylko do odczytu
-- Row Level Security (RLS) jest włączone na wszystkich tabelach z politykami SELECT dla użytkowników anonimowych
-- Poświadczenia bazy danych (host, hasło) przechowywane wyłącznie w GitHub Secrets
-- Klucz `service_role` nie jest używany w kodzie frontendowym
