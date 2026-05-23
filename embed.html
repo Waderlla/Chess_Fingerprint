@@ -321,6 +321,7 @@
         const h = data.find(d => d.username === 'hikaru')
         document.getElementById('cards').innerHTML = cardHTML(m, 'magnus') + cardHTML(h, 'hikaru')
         renderRadar(m, h)
+        setTimeout(sendHeight, 300)
       } catch (e) {
         document.getElementById('cards').innerHTML =
           `<div class="loading-msg" style="grid-column:1/-1;color:#c62828">Błąd statystyk: ${e.message}</div>`
@@ -413,6 +414,7 @@
         }
 
         setupGame(gc, sgRows[0])
+        setTimeout(sendHeight, 300)
       } catch (e) {
         document.getElementById('game-info').textContent = 'Błąd: ' + e.message
       }
@@ -535,9 +537,13 @@
 
     // ── Auto-resize dla iframe ────────────────────
     function sendHeight() {
-      window.parent.postMessage({ iframeHeight: document.body.scrollHeight }, '*')
+      const h = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        document.body.offsetHeight
+      )
+      window.parent.postMessage({ iframeHeight: h }, '*')
     }
-    window.addEventListener('load', sendHeight)
     new ResizeObserver(sendHeight).observe(document.body)
   </script>
 </body>
