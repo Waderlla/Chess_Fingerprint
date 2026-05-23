@@ -539,6 +539,13 @@
     // ── Init ──────────────────────────────────────
     loadStats()
     loadRandomGame()
+
+    // ── Auto-resize dla iframe ────────────────────
+    function sendHeight() {
+      window.parent.postMessage({ iframeHeight: document.body.scrollHeight }, '*')
+    }
+    window.addEventListener('load', sendHeight)
+    new ResizeObserver(sendHeight).observe(document.body)
   </script>
 </body>
 </html>
