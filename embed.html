@@ -277,7 +277,11 @@
 
     const { createClient } = supabase
     const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false }
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      }
     })
 
     // ── Chess state ───────────────────────────────
