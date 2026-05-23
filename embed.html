@@ -97,10 +97,11 @@
 
     /* ── REPLAYER ── */
     .replayer {
-      background: #1a1d27;
+      background: var(--card);
       border-radius: 14px;
       padding: 18px;
       box-shadow: 0 2px 12px rgba(80,50,10,.08);
+      border: 1px solid var(--border);
     }
 
     .replayer-grid {
@@ -116,7 +117,7 @@
 
     .game-info {
       font-size: 0.82rem;
-      color: #999;
+      color: var(--muted);
       line-height: 1.6;
       min-height: 40px;
     }
@@ -130,14 +131,14 @@
       margin-bottom: 5px;
     }
 
-    .prob-labels .ml { color: #4fc3f7; }
-    .prob-labels .hl { color: #ffb74d; }
+    .prob-labels .ml { color: var(--magnus); }
+    .prob-labels .hl { color: var(--hikaru); }
 
     .prob-bar {
       height: 30px;
       border-radius: 15px;
       overflow: hidden;
-      background: #2a2d3a;
+      background: #e8e0d5;
       display: flex;
     }
 
@@ -179,9 +180,9 @@
     }
 
     .btn {
-      background: #2a2d3a;
-      color: #e0e0e0;
-      border: none;
+      background: #ede5d8;
+      color: var(--text);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 7px 13px;
       cursor: pointer;
@@ -190,16 +191,16 @@
       line-height: 1;
     }
 
-    .btn:hover { background: #3a3d50; }
-    .btn.active { background: #3a78a0; color: #fff; font-weight: 700; }
-    .btn.new { background: #1a3a1a; border: 1px solid #2a5a2a; color: #e0e0e0; }
-    .btn.new:hover { background: #2a5a2a; }
+    .btn:hover { background: var(--border); }
+    .btn.active { background: var(--magnus); color: #fff; font-weight: 700; border-color: var(--magnus); }
+    .btn.new { background: #edf5ed; border: 1px solid #b0c8b0; color: var(--text); }
+    .btn.new:hover { background: #d0e8d0; }
 
-    .sep { color: #444; user-select: none; }
+    .sep { color: var(--border); user-select: none; }
 
     .move-counter {
       font-size: 0.8rem;
-      color: #888;
+      color: var(--muted);
       font-variant-numeric: tabular-nums;
     }
 
