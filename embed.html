@@ -269,20 +269,27 @@
   <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <script>
     const SUPABASE_URL = 'https://zxhfxqkqinegzsoxeyaj.supabase.co'
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4aGZ4cWtxaW5lZ3pzb3hleWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMTgyOTAsImV4cCI6MjA4OTY5NDI5MH0.1vZzW45PL5ZQSkEBRnLM1HDqJZZ-nwiMUxsMiPsGlhw'
 
-    const { createClient } = supabase
-    const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      }
-    })
+    const HEADERS = {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+    }
+
+    async function sbFetch(path) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: HEADERS })
+      return res.json()
+    }
+
+    async function sbCount(table) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&limit=1`, {
+        headers: { ...HEADERS, Prefer: 'count=exact' }
+      })
+      const range = res.headers.get('content-range') || '0/0'
+      return parseInt(range.split('/')[1]) || 0
+    }
 
     // ── Chess state ───────────────────────────────
     const chess = new Chess()
@@ -303,27 +310,21 @@
 
     // ── Player cards ──────────────────────────────
     async function loadStats() {
-      const { data, error } = await db
-        .from('player_stats')
-        .select('*')
-        .in('username', ['MagnusCarlsen', 'hikaru'])
-
-      if (error) {
+      try {
+        const data = await sbFetch('player_stats?select=*&username=in.(MagnusCarlsen,hikaru)')
+        if (!data || data.length < 2) {
+          document.getElementById('cards').innerHTML =
+            `<div class="loading-msg" style="grid-column:1/-1">Brak danych statystyk (${data?.length ?? 0} wierszy).</div>`
+          return
+        }
+        const m = data.find(d => d.username === 'MagnusCarlsen')
+        const h = data.find(d => d.username === 'hikaru')
+        document.getElementById('cards').innerHTML = cardHTML(m, 'magnus') + cardHTML(h, 'hikaru')
+        renderRadar(m, h)
+      } catch (e) {
         document.getElementById('cards').innerHTML =
-          `<div class="loading-msg" style="grid-column:1/-1;color:#c62828">Błąd statystyk: ${error.message}</div>`
-        return
+          `<div class="loading-msg" style="grid-column:1/-1;color:#c62828">Błąd statystyk: ${e.message}</div>`
       }
-      if (!data || data.length < 2) {
-        document.getElementById('cards').innerHTML =
-          `<div class="loading-msg" style="grid-column:1/-1">Brak danych statystyk (${data?.length ?? 0} wierszy).</div>`
-        return
-      }
-
-      const m = data.find(d => d.username === 'MagnusCarlsen')
-      const h = data.find(d => d.username === 'hikaru')
-
-      document.getElementById('cards').innerHTML = cardHTML(m, 'magnus') + cardHTML(h, 'hikaru')
-      renderRadar(m, h)
     }
 
     function cardHTML(p, cls) {
@@ -390,45 +391,31 @@
       stopPlay()
       document.getElementById('game-info').textContent = 'Ładowanie…'
 
-      const { count } = await db
-        .from('game_classifications')
-        .select('*', { count: 'exact', head: true })
+      try {
+        const total = await sbCount('game_classifications')
+        const offset = Math.floor(Math.random() * (total || 100))
 
-      const total = count || 100
-      const offset = Math.floor(Math.random() * total)
+        const gcRows = await sbFetch(
+          `game_classifications?select=game_url,username,move_probs&offset=${offset}&limit=1`
+        )
+        if (!gcRows?.length) {
+          document.getElementById('game-info').textContent = 'Brak danych partii.'
+          return
+        }
+        const gc = gcRows[0]
 
-      const { data: gcRows, error: gcErr } = await db
-        .from('game_classifications')
-        .select('game_url, username, move_probs')
-        .range(offset, offset)
+        const sgRows = await sbFetch(
+          `source_games?select=pgn,white_username,black_username,played_at,time_class,player_result&game_url=eq.${encodeURIComponent(gc.game_url)}&limit=1`
+        )
+        if (!sgRows?.length || !sgRows[0].pgn) {
+          document.getElementById('game-info').textContent = 'Brak PGN dla tej partii.'
+          return
+        }
 
-      if (gcErr || !gcRows?.length) {
-        document.getElementById('game-info').textContent =
-          'Błąd pobierania partii: ' + (gcErr?.message || 'brak danych')
-        return
+        setupGame(gc, sgRows[0])
+      } catch (e) {
+        document.getElementById('game-info').textContent = 'Błąd: ' + e.message
       }
-
-      const gc = gcRows[0]
-
-      const { data: sgRows, error: sgErr } = await db
-        .from('source_games')
-        .select('pgn, white_username, black_username, played_at, time_class, player_result')
-        .eq('game_url', gc.game_url)
-        .limit(1)
-
-      if (sgErr || !sgRows?.length) {
-        document.getElementById('game-info').textContent =
-          'Błąd source_games: ' + (sgErr?.message || 'brak wiersza dla ' + gc.game_url)
-        return
-      }
-
-      const sg = sgRows[0]
-      if (!sg.pgn) {
-        document.getElementById('game-info').textContent = 'PGN jest NULL w bazie dla tej partii.'
-        return
-      }
-
-      setupGame(gc, sg)
     }
 
     function setupGame(gc, sg) {
