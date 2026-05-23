@@ -254,9 +254,9 @@
           <button class="btn" id="btn-play">▶ Play</button>
           <button class="btn" id="btn-next">▶|</button>
           <span class="sep">|</span>
-          <button class="btn active" id="btn-1x">1×</button>
-          <button class="btn" id="btn-2x">2×</button>
-          <button class="btn" id="btn-4x">4×</button>
+          <button class="btn active" id="btn-1x" onclick="setSpeed(1200,'btn-1x')">1x</button>
+          <button class="btn" id="btn-2x" onclick="setSpeed(600,'btn-2x')">2x</button>
+          <button class="btn" id="btn-4x" onclick="setSpeed(250,'btn-4x')">4x</button>
         </div>
 
         <div class="move-counter" id="move-counter">Ruch 0 / 0</div>
@@ -528,9 +528,6 @@
     document.getElementById('btn-next').addEventListener('click', () => { stopPlay(); stepForward() })
     document.getElementById('btn-play').addEventListener('click', togglePlay)
     document.getElementById('btn-new').addEventListener('click', loadRandomGame)
-    document.getElementById('btn-1x').addEventListener('click', () => setSpeed(1200, 'btn-1x'))
-    document.getElementById('btn-2x').addEventListener('click', () => setSpeed(600, 'btn-2x'))
-    document.getElementById('btn-4x').addEventListener('click', () => setSpeed(250, 'btn-4x'))
 
     // ── Init ──────────────────────────────────────
     loadStats()
