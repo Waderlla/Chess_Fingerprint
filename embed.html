@@ -321,7 +321,7 @@
         const h = data.find(d => d.username === 'hikaru')
         document.getElementById('cards').innerHTML = cardHTML(m, 'magnus') + cardHTML(h, 'hikaru')
         renderRadar(m, h)
-        setTimeout(sendHeight, 300)
+        setTimeout(sendHeight, 600)
       } catch (e) {
         document.getElementById('cards').innerHTML =
           `<div class="loading-msg" style="grid-column:1/-1;color:#c62828">Błąd statystyk: ${e.message}</div>`
@@ -414,7 +414,7 @@
         }
 
         setupGame(gc, sgRows[0])
-        setTimeout(sendHeight, 300)
+        setTimeout(sendHeight, 800)
       } catch (e) {
         document.getElementById('game-info').textContent = 'Błąd: ' + e.message
       }
@@ -540,11 +540,17 @@
       const h = Math.max(
         document.body.scrollHeight,
         document.documentElement.scrollHeight,
-        document.body.offsetHeight
+        document.body.offsetHeight,
+        document.documentElement.offsetHeight
       )
-      window.parent.postMessage({ iframeHeight: h }, '*')
+      if (h > 100) window.parent.postMessage({ iframeHeight: h }, '*')
     }
     new ResizeObserver(sendHeight).observe(document.body)
+    window.addEventListener('load', sendHeight)
+    // retry after images/fonts settle
+    setTimeout(sendHeight, 500)
+    setTimeout(sendHeight, 1200)
+    setTimeout(sendHeight, 2500)
   </script>
 </body>
 </html>
