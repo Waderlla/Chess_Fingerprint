@@ -518,7 +518,8 @@
 
     function setSpeed(ms, btnId) {
       speed = ms
-      ['btn-1x','btn-2x','btn-4x'].forEach(id => document.getElementById(id).classList.remove('active'))
+      const speedBtns = ['btn-1x','btn-2x','btn-4x']
+      speedBtns.forEach(id => document.getElementById(id).classList.remove('active'))
       document.getElementById(btnId).classList.add('active')
       if (playInterval) { stopPlay(); startPlay() }
     }
