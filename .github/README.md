@@ -1,4 +1,4 @@
-# ♟ Chess Style Classifier — Magnus vs Hikaru
+# ♟ Chess Style Classifier - Magnus vs Hikaru
 
 **Can a machine learning model recognize a chess grandmaster by their playing style?**
 
