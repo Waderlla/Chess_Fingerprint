@@ -2,7 +2,7 @@
 
 **Can a machine learning model recognize a chess grandmaster by their playing style?**
 
-A Random Forest classifier trained on real Chess.com games, enriched with Stockfish engine analysis, that classifies whether a given game was played by Magnus Carlsen or Hikaru Nakamura — move by move.
+A Random Forest classifier trained on real Chess.com games, enriched with Stockfish engine analysis, that classifies whether a given game was played by Magnus Carlsen or Hikaru Nakamura - move by move.
 
 🔗 **Live demo:** [waderlla.github.io/Chess_Fingerprint](https://waderlla.github.io/Chess_Fingerprint)
 
@@ -10,10 +10,10 @@ A Random Forest classifier trained on real Chess.com games, enriched with Stockf
 
 ## How it works
 
-1. **Data collection** — games are fetched automatically from the Chess.com public API each week via GitHub Actions
-2. **Engine analysis** — Stockfish evaluates every player move (ACPL, best move rate, blunder/mistake/inaccuracy rates, sacrifice rate)
-3. **Classification** — a Random Forest model (21 features) is trained and used to compute per-move probabilities for each game
-4. **Frontend** — an interactive page displays player stats, a radar chart, a live chess board replay, and an animated probability bar that updates with each move
+1. **Data collection** - games are fetched automatically from the Chess.com public API each week via GitHub Actions
+2. **Engine analysis** - Stockfish evaluates every player move (ACPL, best move rate, blunder/mistake/inaccuracy rates, sacrifice rate)
+3. **Classification** - a Random Forest model (21 features) is trained and used to compute per-move probabilities for each game
+4. **Frontend** - an interactive page displays player stats, a radar chart, a live chess board replay, and an animated probability bar that updates with each move
 
 ## Features
 
@@ -66,11 +66,11 @@ The first version without engine features achieved ~52% (essentially random). Ad
 
 ---
 
-# ♟ Chess Style Classifier — Magnus vs Hikaru
+# ♟ Chess Style Classifier - Magnus vs Hikaru
 
 **Czy algorytm uczenia maszynowego rozpozna arcymistrza szachowego po stylu gry?**
 
-Klasyfikator Random Forest wytrenowany na prawdziwych partiach z Chess.com, wzbogacony o analizę silnikiem Stockfish. Model klasyfikuje, czy dana partia została rozegrana przez Magnusa Carlsena czy Hikaru Nakamurę — ruch po ruchu.
+Klasyfikator Random Forest wytrenowany na prawdziwych partiach z Chess.com, wzbogacony o analizę silnikiem Stockfish. Model klasyfikuje, czy dana partia została rozegrana przez Magnusa Carlsena czy Hikaru Nakamurę - ruch po ruchu.
 
 🔗 **Demo na żywo:** [waderlla.github.io/Chess_Fingerprint](https://waderlla.github.io/Chess_Fingerprint)
 
@@ -78,10 +78,10 @@ Klasyfikator Random Forest wytrenowany na prawdziwych partiach z Chess.com, wzbo
 
 ## Jak to działa
 
-1. **Pobieranie danych** — partie pobierane automatycznie z publicznego API Chess.com co tydzień przez GitHub Actions
-2. **Analiza silnikiem** — Stockfish ocenia każdy ruch gracza (ACPL, odsetek najlepszych ruchów, wskaźniki błędów i ofiar)
-3. **Klasyfikacja** — model Random Forest (21 cech) wyznacza prawdopodobieństwa dla każdego ruchu w partii
-4. **Frontend** — interaktywna strona pokazuje statystyki graczy, wykres radarowy, odtwarzacz szachownicy i animowany pasek prawdopodobieństwa zmieniający się z każdym ruchem
+1. **Pobieranie danych** - partie pobierane automatycznie z publicznego API Chess.com co tydzień przez GitHub Actions
+2. **Analiza silnikiem** - Stockfish ocenia każdy ruch gracza (ACPL, odsetek najlepszych ruchów, wskaźniki błędów i ofiar)
+3. **Klasyfikacja** - model Random Forest (21 cech) wyznacza prawdopodobieństwa dla każdego ruchu w partii
+4. **Frontend** - interaktywna strona pokazuje statystyki graczy, wykres radarowy, odtwarzacz szachownicy i animowany pasek prawdopodobieństwa zmieniający się z każdym ruchem
 
 ## Funkcjonalności
 
