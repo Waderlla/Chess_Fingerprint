@@ -1,0 +1,28 @@
+# Cotygodniowa synchronizacja Chess Fingerprint na VPS:
+# pobranie partii -> statystyki -> Stockfish -> klasyfikator -> eksport JSON dla strony.
+# Kroki ExecStart wykonują się po kolei; błąd jednego zatrzymuje resztę
+# (eksport się nie wykona, więc strona dalej pokazuje poprzednie dane).
+[Unit]
+Description=Chess Fingerprint - synchronizacja partii i klasyfikacja
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=chess
+Group=chess
+WorkingDirectory=/opt/chess/app
+EnvironmentFile=/opt/chess/.env
+Environment=PATH=/opt/chess/venv/bin:/usr/local/bin:/usr/bin:/bin:/usr/games
+Environment=PYTHONUNBUFFERED=1
+Environment=TZ=Europe/Warsaw
+Environment=EXPORT_DIR=/srv/chess/data
+# Stockfish nie może zagłodzić Edena i Warkana na tym samym serwerze.
+Nice=10
+CPUQuota=150%
+TimeoutStartSec=6h
+ExecStart=/opt/chess/venv/bin/python run_fetch.py
+ExecStart=/opt/chess/venv/bin/python compute_stats.py
+ExecStart=/opt/chess/venv/bin/python engine_analyzer.py
+ExecStart=/opt/chess/venv/bin/python classifier.py
+ExecStart=/opt/chess/venv/bin/python export_json.py

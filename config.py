@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ===== BAZA DANYCH (SUPABASE / POSTGRES) =====
+# ===== BAZA DANYCH (POSTGRES NA VPS) =====
 
 DB_NAME = os.getenv("SUPABASE_DB_NAME", "postgres")
 DB_USER = os.getenv("SUPABASE_DB_USER", "")

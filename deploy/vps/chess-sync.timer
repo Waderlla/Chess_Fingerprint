@@ -1,0 +1,11 @@
+# Co poniedziałek o 2:00 czasu polskiego (jak wcześniej w GitHub Actions).
+# Persistent=true: jeśli serwer był wtedy wyłączony, sync ruszy po starcie.
+[Unit]
+Description=Chess Fingerprint - cotygodniowy sync
+
+[Timer]
+OnCalendar=Mon *-*-* 02:00:00 Europe/Warsaw
+Persistent=true
+
+[Install]
+WantedBy=timers.target

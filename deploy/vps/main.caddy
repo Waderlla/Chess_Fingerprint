@@ -1,0 +1,6 @@
+# Główny plik Caddy (/etc/caddy/main.caddy), wskazany w drop-inie
+# /etc/systemd/system/caddy.service.d/main-config.conf.
+# /etc/caddy/Caddyfile należy do Edena - jego wdroz.sh nadpisuje go przy
+# każdym wdrożeniu, więc pozostałe aplikacje mają własne pliki w sites/.
+import /etc/caddy/Caddyfile
+import /etc/caddy/sites/*.caddy

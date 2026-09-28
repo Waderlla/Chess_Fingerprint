@@ -1,0 +1,211 @@
+/* Chess Fingerprint - widget na podstronie projektu (dane z chess.olgamironczuk.pl). */
+.cf-widget {
+  --cf-magnus: #3a78a0;
+  --cf-hikaru: #b86420;
+  --cf-card: #fff;
+  --cf-shadow: 0 2px 12px rgba(80, 50, 10, .08);
+  margin-top: 1rem;
+}
+
+.cf-updated {
+  font-size: .8rem;
+  color: var(--text-dim);
+  margin: 0 0 1rem;
+}
+
+.cf-msg {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-dim);
+  padding: 30px;
+  margin: 0;
+}
+
+.cf-msg--error { color: #b3261e; }
+
+/* karty graczy */
+.cf-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.cf-card {
+  background: var(--cf-card);
+  border-radius: 14px;
+  padding: 16px;
+  border-top: 3px solid var(--cf-magnus);
+  box-shadow: var(--cf-shadow);
+}
+
+.cf-card--hikaru { border-top-color: var(--cf-hikaru); }
+
+/* .cf-widget z przodu: styl h3 z project-case-study.css ma wyzsza specyficznosc. */
+.cf-widget .cf-card h3 {
+  font-size: 1rem;
+  margin: 0 0 12px;
+  padding: 0;
+  color: var(--cf-magnus);
+}
+
+.cf-widget .cf-card--hikaru h3 { color: var(--cf-hikaru); }
+
+.cf-card dl { margin: 0; }
+
+.cf-stat {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: .8rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.cf-stat:last-child { border-bottom: none; }
+
+.cf-stat dd {
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* radar */
+.cf-radar {
+  position: relative;
+  background: var(--cf-card);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 18px;
+  height: 280px;
+  box-shadow: var(--cf-shadow);
+}
+
+/* odtwarzacz partii */
+.cf-replayer {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+  background: var(--cf-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: var(--cf-shadow);
+}
+
+.cf-board { width: 300px; }
+
+.cf-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.cf-game-info {
+  font-size: .85rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+  min-height: 4.8em;
+  overflow-wrap: anywhere;
+}
+
+.cf-game-info strong { color: var(--text); }
+
+.cf-prob-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: .75rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.cf-prob-labels .cf-ml { color: var(--cf-magnus); }
+.cf-prob-labels .cf-hl { color: var(--cf-hikaru); }
+
+.cf-prob-bar {
+  height: 30px;
+  border-radius: 15px;
+  overflow: hidden;
+  background: #e8e0d5;
+  display: flex;
+}
+
+.cf-magnus-fill,
+.cf-hikaru-fill {
+  display: flex;
+  align-items: center;
+  font-size: .72rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cf-magnus-fill {
+  width: 50%;
+  justify-content: flex-end;
+  padding-right: 8px;
+  background: linear-gradient(90deg, #1e5f8a, #4fa0c8);
+  transition: width .5s cubic-bezier(.4, 0, .2, 1);
+}
+
+.cf-hikaru-fill {
+  flex: 1;
+  padding-left: 8px;
+  background: linear-gradient(90deg, #c87830, #a05018);
+}
+
+.cf-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cf-sep { color: var(--border); user-select: none; }
+
+.cf-btn {
+  font: inherit;
+  font-size: .85rem;
+  line-height: 1;
+  background: var(--bg-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 13px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.cf-btn:hover { background: var(--border); }
+.cf-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.cf-btn[aria-pressed="true"] {
+  background: var(--cf-magnus);
+  border-color: var(--cf-magnus);
+  color: #fff;
+  font-weight: 700;
+}
+
+.cf-btn--new {
+  align-self: flex-start;
+  background: var(--accent-soft);
+}
+
+.cf-counter {
+  font-size: .8rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 620px) {
+  .cf-cards,
+  .cf-replayer { grid-template-columns: 1fr; }
+  .cf-board { width: 100%; max-width: 320px; margin: 0 auto; }
+  .cf-sep { display: none; }
+}

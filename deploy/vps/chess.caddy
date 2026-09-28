@@ -1,0 +1,10 @@
+# Dane JSON dla widgetu na olgamironczuk.pl (tylko odczyt, statyczne pliki).
+chess.olgamironczuk.pl {
+	encode gzip
+	header Strict-Transport-Security "max-age=31536000"
+	header Access-Control-Allow-Origin "https://olgamironczuk.pl"
+	header Vary Origin
+	header Cache-Control "public, max-age=3600"
+	root * /srv/chess/data
+	file_server
+}
